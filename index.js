@@ -1,5 +1,6 @@
 const { ApolloServer } = require("@apollo/server");
 const { startStandaloneServer } = require("@apollo/server/standalone");
+const { v1: uuid } = require("uuid");
 
 let authors = [
   {
@@ -95,17 +96,15 @@ const typeDefs = `
     id: ID!
   }
 
-  mutation {
+  type Mutation {
     addBook(
-      title: "NoSQL Distilled",
-      author: "Martin Fowler",
-      published: 2012,
-      genres: ["database", "nosql"]
-    ) {
-      title,
-      author
-    }
+      title: String
+      author: String
+      published: Int
+      genres: [String]
+    ): Books
   }
+
 
   type Query {
     bookCount: Int!
@@ -140,6 +139,21 @@ const resolvers = {
     },
     findBook: (root, args) => books.find((p) => p.id === args.id),
     findAuthor: (root, args) => authors.find((p) => p.id === args.id),
+  },
+  Mutation: {
+    addBook: (root, args) => {
+      if (books.find((p) => p.name === args.name)) {
+        throw new GraphQLError("Name must be unique", {
+          extensions: {
+            code: "BAD_USER_INPUT",
+            invalidArgs: args.name,
+          },
+        });
+      }
+      const book = { ...args, id: uuid() };
+      books = books.concat(book);
+      return book;
+    },
   },
 };
 
