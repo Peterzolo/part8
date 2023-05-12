@@ -109,6 +109,11 @@ const typeDefs = `
       name: String
       born: String
     ): Author
+
+    editAuthor(
+      name: String!
+      born: String!
+    ): Author
   }
 
 
@@ -149,7 +154,7 @@ const resolvers = {
   Mutation: {
     addBook: (root, args) => {
       if (books.find((p) => p.title === args.title)) {
-        throw new GraphQLError("Name must be unique", {
+        throw new GraphQLError("Title must be unique", {
           extensions: {
             code: "BAD_USER_INPUT",
             invalidArgs: args.title,
@@ -159,6 +164,30 @@ const resolvers = {
       const book = { ...args, id: uuid() };
       books = books.concat(book);
       return book;
+    },
+    addAuthor: (root, args) => {
+      if (authors.find((p) => p.name === args.name)) {
+        throw new GraphQLError("Name must be unique", {
+          extensions: {
+            code: "BAD_USER_INPUT",
+            invalidArgs: args.name,
+          },
+        });
+      }
+      const author = { ...args, id: uuid() };
+      authors = authors.concat(author);
+      return author;
+    },
+
+    editAuthor: (root, args) => {
+      const author = authors.find((p) => p.id === args.id);
+      if (!author) {
+        return null;
+      }
+
+      const updatedAuthor = { ...author, born: args.born };
+      authors = authors.map((p) => (p.id === args.id ? updatedAuthor : p));
+      return updatedAuthor;
     },
   },
 };
