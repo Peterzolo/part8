@@ -18,11 +18,11 @@ let authors = [
     born: 1821,
   },
   {
-    name: "Joshua Kerievsky", // birthyear not known
+    name: "Joshua Kerievsky",
     id: "afa5b6f2-344d-11e9-a414-719c6709cf3e",
   },
   {
-    name: "Sandi Metz", // birthyear not known
+    name: "Sandi Metz",
     id: "afa5b6f3-344d-11e9-a414-719c6709cf3e",
   },
 ];
@@ -82,24 +82,25 @@ let books = [
 const typeDefs = `
   type Books {
     title: String!
-    published: int!
+    published: Int!
     author: String!
-    genre: String! 
+    genres: [String]! 
     id: ID!
   }
 
   type Author {
     name: String!
-    born: int!
+    born: Int!
     id: ID!
   }
 
   type Query {
     bookCount: Int!
     authorCount: Int!
-    allBooks: [books!]!
-    allAuthors: [author!]!
-    findPerson(id: String!): Person
+    allBooks: [Books!]!
+    allAuthors: [Author!]!
+    findBooks(id: String!): Books
+    findAuthor(id: String!): Author
   }
 `;
 
@@ -109,7 +110,8 @@ const resolvers = {
     authorCount: () => authors.length,
     allBooks: () => books,
     allAuthors: () => authors,
-    // findPerson: (root, args) => persons.find((p) => p.id === args.id),
+    findBook: (root, args) => books.find((p) => p.id === args.id),
+    findAuth: (root, args) => books.find((p) => p.id === args.id),
   },
 };
 
