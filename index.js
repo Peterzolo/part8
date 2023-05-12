@@ -88,18 +88,28 @@ const typeDefs = `
     id: ID!
   }
 
+  type Author {
+    name: String!
+    born: int!
+    id: ID!
+  }
+
   type Query {
-    personCount: Int!
-    allPersons: [Person!]!
+    bookCount: Int!
+    authorCount: Int!
+    allBooks: [books!]!
+    allAuthors: [author!]!
     findPerson(id: String!): Person
   }
 `;
 
 const resolvers = {
   Query: {
-    personCount: () => persons.length,
-    allPersons: () => persons,
-    findPerson: (root, args) => persons.find((p) => p.id === args.id),
+    bookCount: () => books.length,
+    authorCount: () => authors.length,
+    allBooks: () => books,
+    allAuthors: () => authors,
+    // findPerson: (root, args) => persons.find((p) => p.id === args.id),
   },
 };
 
