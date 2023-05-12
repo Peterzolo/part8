@@ -112,7 +112,7 @@ const typeDefs = `
 
     editAuthor(
       id: ID!
-      born: String!
+      born: Int!
     ): Author
   }
 
