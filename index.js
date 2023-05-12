@@ -80,11 +80,11 @@ let books = [
 ];
 
 const typeDefs = `
-  type Person {
-    name: String!
-    phone: String
-    street: String!
-    city: String! 
+  type Books {
+    title: String!
+    published: int!
+    author: String!
+    genre: String! 
     id: ID!
   }
 
