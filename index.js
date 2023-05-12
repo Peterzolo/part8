@@ -99,7 +99,7 @@ const typeDefs = `
     authorCount: Int!
     allBooks: [Books!]!
     allAuthors: [Author!]!
-    findBooks(id: String!): Books
+    findBook(id: String!): Books
     findAuthor(id: String!): Author
   }
 `;
@@ -111,7 +111,7 @@ const resolvers = {
     allBooks: () => books,
     allAuthors: () => authors,
     findBook: (root, args) => books.find((p) => p.id === args.id),
-    findAuth: (root, args) => books.find((p) => p.id === args.id),
+    findAuthor: (root, args) => authors.find((p) => p.id === args.id),
   },
 };
 
