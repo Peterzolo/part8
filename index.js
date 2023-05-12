@@ -104,6 +104,11 @@ const typeDefs = `
       published: Int
       genres: [String]
     ): Books
+
+    addAuthor(
+      name: String
+      born: String
+    ): Author
   }
 
 
