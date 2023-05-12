@@ -95,6 +95,18 @@ const typeDefs = `
     id: ID!
   }
 
+  mutation {
+    addBook(
+      title: "NoSQL Distilled",
+      author: "Martin Fowler",
+      published: 2012,
+      genres: ["database", "nosql"]
+    ) {
+      title,
+      author
+    }
+  }
+
   type Query {
     bookCount: Int!
     authorCount: Int!
