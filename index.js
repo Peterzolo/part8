@@ -138,12 +138,12 @@ const typeDefs = `
 const resolvers = {
   Query: {
     bookCount: async () => Book.collection.countDocuments(),
-    authorCount: () => authors.length,
+
     allBooks: async (root, args) => {
       // filters missing
       return Book.find({});
     },
-    findPerson: async (root, args) => Book.findOne({ title: args.title }),
+    findBook: async (root, args) => Book.findOne({ title: args.title }),
   },
 
   Mutation: {

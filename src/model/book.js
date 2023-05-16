@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const uniqueValidator = require("mongoose-unique-validator");
 
 const Bookschema = new mongoose.Schema({
   title: {
@@ -19,6 +20,8 @@ const Bookschema = new mongoose.Schema({
     required: true,
   },
 });
+
+Bookschema.plugin(uniqueValidator);
 
 const Book = mongoose.model("Person", Bookschema);
 
