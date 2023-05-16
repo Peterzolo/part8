@@ -145,7 +145,7 @@ const resolvers = {
         const bookCount = books.filter(
           (book) => book.author === author.name
         ).length;
-        return { ...author, bookCount };
+        return { ...author, bookCount: bookCount || 0 };
       });
     },
     findBook: (root, args) => books.find((p) => p.id === args.id),
