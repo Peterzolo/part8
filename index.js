@@ -2,6 +2,14 @@ const { ApolloServer } = require("@apollo/server");
 const { startStandaloneServer } = require("@apollo/server/standalone");
 const { v1: uuid } = require("uuid");
 const { GraphQLError } = require("graphql");
+const mongoose = require("mongoose");
+mongoose.set("strictQuery", false);
+
+const Book = require("./src/model/book");
+
+require("dotenv").config();
+
+const MONGODB_URI = process.env.MONGODB_URI;
 
 let authors = [
   {
@@ -129,65 +137,19 @@ const typeDefs = `
 
 const resolvers = {
   Query: {
-    bookCount: () => books.length,
+    bookCount: async () => Book.collection.countDocuments(),
     authorCount: () => authors.length,
-    allBooks: (root, args) => {
-      if (args.author) {
-        return books.filter((book) => book.author === args.author);
-      }
-      if (args.genre) {
-        return books.filter((book) => book.genres.includes(args.genre));
-      }
-      return books;
+    allBooks: async (root, args) => {
+      // filters missing
+      return Book.find({});
     },
-    allAuthors: () => {
-      return authors.map((author) => {
-        const bookCount = books.filter(
-          (book) => book.author === author.name
-        ).length;
-        return { ...author, bookCount: bookCount || 0 };
-      });
-    },
-    findBook: (root, args) => books.find((p) => p.id === args.id),
-    findAuthor: (root, args) => authors.find((p) => p.id === args.id),
+    findPerson: async (root, args) => Book.findOne({ title: args.title }),
   },
+
   Mutation: {
-    addBook: (root, args) => {
-      if (books.find((p) => p.title === args.title)) {
-        throw new GraphQLError("Title must be unique", {
-          extensions: {
-            code: "BAD_USER_INPUT",
-            invalidArgs: args.title,
-          },
-        });
-      }
-      const book = { ...args, id: uuid() };
-      books = books.concat(book);
-      return book;
-    },
-    addAuthor: (root, args) => {
-      if (authors.find((p) => p.name === args.name)) {
-        throw new GraphQLError("Name must be unique", {
-          extensions: {
-            code: "BAD_USER_INPUT",
-            invalidArgs: args.name,
-          },
-        });
-      }
-      const author = { ...args, id: uuid() };
-      authors = authors.concat(author);
-      return author;
-    },
-
-    editAuthor: (root, args) => {
-      const author = authors.find((p) => p.id === args.id);
-      if (!author) {
-        return null;
-      }
-
-      const updatedAuthor = { ...author, born: args.born };
-      authors = authors.map((p) => (p.id === args.id ? updatedAuthor : p));
-      return updatedAuthor;
+    addBook: async (root, args) => {
+      const book = new Book({ ...args });
+      return book.save();
     },
   },
 };
