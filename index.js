@@ -33,7 +33,7 @@ const typeDefs = gql`
     name: String!
     born: Int
     bookCount: Int!
-    books: [Book!]! # Define the books field as an array of Book type
+    books: [Book!]!
     id: ID!
   }
 
@@ -44,7 +44,12 @@ const typeDefs = gql`
       author: String!
       genres: [String]!
     ): Book
-    # ... other mutations ...
+    addAuthor(
+      name:String!
+      born:Int!
+      bookCount
+      books[String]
+    ):Author
   }
 
   type Query {
@@ -61,18 +66,18 @@ const resolvers = {
   Query: {
     bookCount: async () => Book.collection.countDocuments(),
     authorCount: async () => Author.collection.countDocuments(),
+
     allBooks: async (root, args) => {
-      const books = await Book.find({}).populate("author");
+      const books = await Book.find({}).populate("Author");
       return books;
     },
     findBook: async (root, args) => Book.findOne({ title: args.title }),
-  },
 
-  Author: {
-    books: async (parent) => {
-      const books = await Book.find({ author: parent.id });
-      return books;
+    allAuthors: async (root, args) => {
+      const authors = await Author.find({}).populate("Book");
+      return authors;
     },
+    findBook: async (root, args) => Book.findOne({ title: args.title }),
   },
 
   Mutation: {
