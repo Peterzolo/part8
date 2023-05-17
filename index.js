@@ -20,13 +20,13 @@ mongoose
   });
 
 const typeDefs = `
-  type Books {
-    title: String!
-    published: Int!
-    author: String!
-    genres: [String]! 
-    id: ID!
-  }
+type Book {
+  title: String!
+  published: Int!
+  author: Author!
+  genres: [String]!
+  id: ID!
+}
 
   type Author {
     name: String!
