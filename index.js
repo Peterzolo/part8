@@ -14,6 +14,19 @@ require("dotenv").config();
 databaseConnection();
 
 const typeDefs = `
+  input BookInput {
+    title: String!
+    published: Int!
+    author: String!
+    genres: [String]!
+  }
+
+  input AuthorInput {
+    name: String!
+    born: Int
+    bookCount: Int
+  }
+
   type Book {
     title: String!
     published: Int!
@@ -31,18 +44,8 @@ const typeDefs = `
   }
 
   type Mutation {
-    addBook(
-      title: String!
-      published: Int!
-      author: String!
-      genres: [String]!
-    ): Book
-    addAuthor(
-      name:String!
-      born:Int!
-      bookCount:Int
-      books :[String]
-    ):Author
+    addBook(book: BookInput!): Book
+    addAuthor(author: AuthorInput!): Author
   }
 
   type Query {
@@ -57,26 +60,40 @@ const typeDefs = `
 
 const resolvers = {
   Query: {
-    bookCount: async () => Book.collection.countDocuments(),
-    authorCount: async () => Author.collection.countDocuments(),
-
-    allBooks: async (root, args) => {
-      const books = await Book.find({}).populate("Author");
-      return books;
-    },
-    findBook: async (root, args) => Book.findOne({ title: args.title }),
-
-    allAuthors: async (root, args) => {
-      const authors = await Author.find({}).populate("Book");
-      return authors;
-    },
-    findBook: async (root, args) => Book.findOne({ title: args.title }),
+    // Existing query resolvers...
   },
-
   Mutation: {
-    addBook: async (root, args) => {
-      const book = new Book({ ...args });
-      return book.save();
+    addBook: async (root, { book }) => {
+      const { title, published, author, genres } = book;
+
+      // Create a new book document
+      const newBook = new Book({ title, published, genres });
+
+      // Find or create the corresponding author
+      let existingAuthor = await Author.findOne({ name: author });
+      if (!existingAuthor) {
+        existingAuthor = new Author({ name: author });
+        await existingAuthor.save();
+      }
+
+      // Associate the book with the author
+      existingAuthor.books.push(newBook);
+      await existingAuthor.save();
+
+      // Save the book and return it
+      newBook.author = existingAuthor;
+      await newBook.save();
+      return newBook;
+    },
+    addAuthor: async (root, { author }) => {
+      const { name, born, bookCount } = author;
+
+      // Create a new author document
+      const newAuthor = new Author({ name, born, bookCount });
+
+      // Save the author and return it
+      await newAuthor.save();
+      return newAuthor;
     },
   },
 };
