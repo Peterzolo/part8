@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
 
 const Book = require("./src/model/book");
+const Author = require("./src/model/Author");
 
 require("dotenv").config();
 
@@ -76,6 +77,7 @@ type Book {
 const resolvers = {
   Query: {
     bookCount: async () => Book.collection.countDocuments(),
+    authorCount: async () => Book.collection.countDocuments(),
 
     allBooks: async (root, args) => {
       const books = await Book.find({}).populate("author");
