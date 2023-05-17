@@ -16,7 +16,7 @@ const AuthorSchema = new mongoose.Schema({
   },
   books: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Books",
+    ref: "Book",
   },
 });
 

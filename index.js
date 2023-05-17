@@ -1,4 +1,4 @@
-const { ApolloServer } = require("@apollo/server");
+const { ApolloServer, gql } = require("@apollo/server");
 const { startStandaloneServer } = require("@apollo/server/standalone");
 const { v1: uuid } = require("uuid");
 const { GraphQLError } = require("graphql");
@@ -20,19 +20,20 @@ mongoose
     console.log("error connection to MongoDB:", error.message);
   });
 
-const typeDefs = `
-type Book {
-  title: String!
-  published: Int!
-  author: Author!
-  genres: [String]!
-  id: ID!
-}
+const typeDefs = gql`
+  type Book {
+    title: String!
+    published: Int!
+    author: Author!
+    genres: [String]!
+    id: ID!
+  }
 
   type Author {
     name: String!
     born: Int
     bookCount: Int!
+    books: [Book!]! # Define the books field as an array of Book type
     id: ID!
   }
 
@@ -42,34 +43,16 @@ type Book {
       published: Int!
       author: String!
       genres: [String]!
-    ): Books
-
-    editNumber(
-      name: String!
-      phone: String!
-    ): Person
-
-    createUser(
-      username: String!
-    ): User
-    
-    login(
-      username: String!
-      password: String!
-    ): Token  
-    
-    addAsFriend(
-      name: String!
-    ): User
+    ): Book
+    # ... other mutations ...
   }
-
 
   type Query {
     bookCount: Int!
     authorCount: Int!
-    allBooks(author: String, genre : String): [Books!]!
+    allBooks(author: String, genre: String): [Book!]!
     allAuthors: [Author!]!
-    findBook(id: String!): Books
+    findBook(id: String!): Book
     findAuthor(id: String!): Author
   }
 `;
@@ -78,7 +61,6 @@ const resolvers = {
   Query: {
     bookCount: async () => Book.collection.countDocuments(),
     authorCount: async () => Author.collection.countDocuments(),
-
     allBooks: async (root, args) => {
       const books = await Book.find({}).populate("author");
       return books;
@@ -86,11 +68,19 @@ const resolvers = {
     findBook: async (root, args) => Book.findOne({ title: args.title }),
   },
 
+  Author: {
+    books: async (parent) => {
+      const books = await Book.find({ author: parent.id });
+      return books;
+    },
+  },
+
   Mutation: {
     addBook: async (root, args) => {
       const book = new Book({ ...args });
       return book.save();
     },
+    // ... other mutations ...
   },
 };
 

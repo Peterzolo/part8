@@ -12,7 +12,7 @@ const Bookschema = new mongoose.Schema({
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "author",
+    ref: "Author",
     required: true,
   },
   published: {
@@ -23,6 +23,6 @@ const Bookschema = new mongoose.Schema({
 
 Bookschema.plugin(uniqueValidator);
 
-const Book = mongoose.model("Person", Bookschema);
+const Book = mongoose.model("Book", Bookschema);
 
 module.exports = Book;
