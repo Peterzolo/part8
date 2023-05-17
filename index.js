@@ -10,6 +10,14 @@ const Book = require("./src/model/book");
 require("dotenv").config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => {
+    console.log("connected to MongoDB");
+  })
+  .catch((error) => {
+    console.log("error connection to MongoDB:", error.message);
+  });
 
 const typeDefs = `
   type Books {
@@ -28,22 +36,30 @@ const typeDefs = `
   }
 
   type Mutation {
-    addBook(
-      title: String
-      author: String
-      published: Int
-      genres: [String]
-    ): Books
+    addPerson(
+      name: String!
+      phone: String
+      street: String!
+      city: String!
+    ): Person
 
-    addAuthor(
-      name: String
-      born: String
-    ): Author
+    editNumber(
+      name: String!
+      phone: String!
+    ): Person
 
-    editAuthor(
-      id: ID!
-      born: Int!
-    ): Author
+    createUser(
+      username: String!
+    ): User
+    
+    login(
+      username: String!
+      password: String!
+    ): Token  
+    
+    addAsFriend(
+      name: String!
+    ): User
   }
 
 
@@ -63,7 +79,8 @@ const resolvers = {
 
     allBooks: async (root, args) => {
       // filters missing
-      return Book.find({});
+      const books = Book.find({});
+      return books;
     },
     findBook: async (root, args) => Book.findOne({ title: args.title }),
   },
