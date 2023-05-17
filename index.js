@@ -7,20 +7,13 @@ mongoose.set("strictQuery", false);
 
 const Book = require("./src/model/book");
 const Author = require("./src/model/Author");
+const { MONGODB_URI, databaseConnection } = require("./src/config/database");
 
 require("dotenv").config();
 
-const MONGODB_URI = process.env.MONGODB_URI;
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    console.log("connected to MongoDB");
-  })
-  .catch((error) => {
-    console.log("error connection to MongoDB:", error.message);
-  });
+databaseConnection();
 
-const typeDefs = gql`
+const typeDefs = `
   type Book {
     title: String!
     published: Int!
@@ -47,8 +40,8 @@ const typeDefs = gql`
     addAuthor(
       name:String!
       born:Int!
-      bookCount
-      books[String]
+      bookCount:Int
+      books :[String]
     ):Author
   }
 
@@ -85,7 +78,6 @@ const resolvers = {
       const book = new Book({ ...args });
       return book.save();
     },
-    // ... other mutations ...
   },
 };
 
