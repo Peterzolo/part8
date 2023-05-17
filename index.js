@@ -3,11 +3,11 @@ const { startStandaloneServer } = require("@apollo/server/standalone");
 const { v1: uuid } = require("uuid");
 const { GraphQLError } = require("graphql");
 const mongoose = require("mongoose");
+const { databaseConnection } = require("./src/config/database");
 mongoose.set("strictQuery", false);
 
 const Book = require("./src/model/book");
 const Author = require("./src/model/Author");
-const { MONGODB_URI, databaseConnection } = require("./src/config/database");
 
 require("dotenv").config();
 
@@ -59,42 +59,71 @@ const typeDefs = `
 `;
 
 const resolvers = {
-  Query: {
-    // Existing query resolvers...
-  },
   Mutation: {
-    addBook: async (root, { book }) => {
-      const { title, published, author, genres } = book;
+    addBook: async (_, { book }) => {
+      try {
+        const author = await Author.findOne({ name: book.author });
 
-      // Create a new book document
-      const newBook = new Book({ title, published, genres });
+        if (!author) {
+          // If the author doesn't exist, create a new author
+          const newAuthor = new Author({
+            name: book.author,
+            born: null,
+            bookCount: 1,
+          });
 
-      // Find or create the corresponding author
-      let existingAuthor = await Author.findOne({ name: author });
-      if (!existingAuthor) {
-        existingAuthor = new Author({ name: author });
-        await existingAuthor.save();
+          await newAuthor.save();
+
+          const newBook = new Book({
+            title: book.title,
+            published: book.published,
+            author: newAuthor._id,
+            genres: book.genres,
+          });
+
+          await newBook.save();
+
+          return newBook;
+        } else {
+          // If the author exists, increment the bookCount and create a new book
+          author.bookCount += 1;
+          await author.save();
+
+          const newBook = new Book({
+            title: book.title,
+            published: book.published,
+            author: author._id,
+            genres: book.genres,
+          });
+
+          await newBook.save();
+
+          return newBook;
+        }
+      } catch (error) {
+        throw new GraphQLError(`Error adding book: ${error.message}`);
       }
-
-      // Associate the book with the author
-      existingAuthor.books.push(newBook);
-      await existingAuthor.save();
-
-      // Save the book and return it
-      newBook.author = existingAuthor;
-      await newBook.save();
-      return newBook;
     },
-    addAuthor: async (root, { author }) => {
-      const { name, born, bookCount } = author;
 
-      // Create a new author document
-      const newAuthor = new Author({ name, born, bookCount });
+    addAuthor: async (_, { author }) => {
+      try {
+        const newAuthor = new Author({
+          name: author.name,
+          born: author.born,
+          bookCount: author.bookCount || 0,
+        });
 
-      // Save the author and return it
-      await newAuthor.save();
-      return newAuthor;
+        await newAuthor.save();
+
+        return newAuthor;
+      } catch (error) {
+        throw new GraphQLError(`Error adding author: ${error.message}`);
+      }
     },
+  },
+
+  Query: {
+    // Implement your existing query resolvers here
   },
 };
 
