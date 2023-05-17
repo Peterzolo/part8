@@ -36,12 +36,12 @@ const typeDefs = `
   }
 
   type Mutation {
-    addPerson(
-      name: String!
-      phone: String
-      street: String!
-      city: String!
-    ): Person
+    addBook(
+      title: String!
+      published: Int!
+      author: String!
+      genres: [String]!
+    ): Books
 
     editNumber(
       name: String!
