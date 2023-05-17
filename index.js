@@ -77,7 +77,7 @@ type Book {
 const resolvers = {
   Query: {
     bookCount: async () => Book.collection.countDocuments(),
-    authorCount: async () => Book.collection.countDocuments(),
+    authorCount: async () => Author.collection.countDocuments(),
 
     allBooks: async (root, args) => {
       const books = await Book.find({}).populate("author");
