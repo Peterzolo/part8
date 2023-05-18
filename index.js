@@ -37,10 +37,17 @@ input AuthorInput {
   bookCount: Int
 }
 
+input LoginInput {
+  username: String!
+  password: String!
+}
+
+
 type Mutation {
   createAuthor(authorInput: AuthorInput!): Author
   updateAuthor(id: ID!, authorInput: AuthorInput!): Author
   deleteAuthor(id: ID!): Author
+  loginAuthor(loginInput: LoginInput!): Author 
 }
 
 type Query {
@@ -79,6 +86,25 @@ const resolvers = {
         if (!author) {
           throw new Error("Author not found");
         }
+        return author;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
+    },
+
+    loginAuthor: async (_, { loginInput }) => {
+      const { username, password } = loginInput;
+      try {
+        const author = await Author.findOne({ username });
+        if (!author) {
+          throw new Error("Invalid username or password");
+        }
+
+        const passwordMatch = await bcrypt.compare(password, author.password);
+        if (!passwordMatch) {
+          throw new Error("Invalid username or password");
+        }
+
         return author;
       } catch (error) {
         throw new GraphQLError(error.message);
