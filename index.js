@@ -13,6 +13,7 @@ const express = require("express");
 const cors = require("cors");
 
 const Author = require("./src/model/Author");
+const Book = require("./src/model/book");
 const authenticated = require("./src/utils/auth-middleware");
 
 require("dotenv").config();
@@ -186,6 +187,26 @@ const resolvers = {
       try {
         const authors = await Author.find();
         return authors;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
+    },
+
+    getBook: async (_, { id }) => {
+      try {
+        const book = await Book.findById(id);
+        if (!book) {
+          throw new Error("Book not found");
+        }
+        return book;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
+    },
+    getAllBooks: async () => {
+      try {
+        const books = await Book.find();
+        return books;
       } catch (error) {
         throw new GraphQLError(error.message);
       }
