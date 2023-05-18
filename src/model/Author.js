@@ -8,6 +8,11 @@ const AuthorSchema = new mongoose.Schema({
     unique: true,
     minlength: 4,
   },
+  username: {
+    type: String,
+    required: true,
+  },
+  password: { type: String, required: true },
   born: {
     type: Number,
   },

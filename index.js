@@ -6,7 +6,6 @@ const mongoose = require("mongoose");
 const { databaseConnection } = require("./src/config/database");
 mongoose.set("strictQuery", false);
 
-const Book = require("./src/model/book");
 const Author = require("./src/model/Author");
 
 require("dotenv").config();
@@ -14,82 +13,76 @@ require("dotenv").config();
 databaseConnection();
 
 const typeDefs = `
-  input BookInput {
-    title: String!
-    published: Int!
-    author: String!
-    genres: [String]!
-  }
+type Author {
+  _id: ID!
+  name: String!
+  username: String!
+  password: String!
+  born: Int
+  bookCount: Int
+  books: [Book]
+}
 
-  input AuthorInput {
-    name: String!
-    born: Int!
-    bookCount: Int
-  }
+type Book {
+  _id: ID!
+  title: String!
+  author: Author!
+}
 
-  type Book {
-    title: String!
-    published: Int!
-    author: Author!
-    genres: [String]!
-    id: ID!
-  }
+input AuthorInput {
+  name: String!
+  username: String!
+  password: String!
+  born: Int
+  bookCount: Int
+}
 
-  type Author {
-    name: String!
-    born: Int
-    bookCount: Int!
-    books: [Book!]!
-    id: ID!
-  }
+type Mutation {
+  createAuthor(authorInput: AuthorInput!): Author
+  updateAuthor(id: ID!, authorInput: AuthorInput!): Author
+  deleteAuthor(id: ID!): Author
+}
 
-  type Mutation {
-    addBook(book: BookInput!): Book
-    addAuthor(author: AuthorInput!): Author
-  }
-
-  type Query {
-    bookCount: Int!
-    authorCount: Int!
-    allBooks(author: String, genre: String): [Book!]!
-    allAuthors: [Author!]!
-    findBook(id: String!): Book
-    findAuthor(id: String!): Author
-  }
+type Query {
+  getAuthor(id: ID!): Author
+  getAllAuthors: [Author]
+}
 `;
 
 const resolvers = {
   Mutation: {
-    addBook: async (_, { book }) => {
-      const { title, published, author: authorName, genres } = book;
-
-      const existingBook = await Book.findOne({ title });
-      if (existingBook) {
-        throw new GraphQLError("Book with the same title already exists");
+    createAuthor: async (_, { authorInput }) => {
+      try {
+        const author = new Author(authorInput);
+        await author.save();
+        return author;
+      } catch (error) {
+        throw new GraphQLError(error.message);
       }
-
-      let author = await Author.findOne({ name: authorName });
-
-      // Create a new author if they don't exist
-      if (!author) {
-        author = new Author({
-          name: authorName,
-          bookCount: 0,
+    },
+    updateAuthor: async (_, { id, authorInput }) => {
+      try {
+        const author = await Author.findByIdAndUpdate(id, authorInput, {
+          new: true,
         });
+        if (!author) {
+          throw new Error("Author not found");
+        }
+        return author;
+      } catch (error) {
+        throw new GraphQLError(error.message);
       }
-
-      const newBook = new Book({
-        title,
-        published,
-        genres,
-        author: author._id,
-      });
-
-      author.bookCount += 1;
-      await author.save();
-      await newBook.save();
-
-      return newBook;
+    },
+    deleteAuthor: async (_, { id }) => {
+      try {
+        const author = await Author.findByIdAndRemove(id);
+        if (!author) {
+          throw new Error("Author not found");
+        }
+        return author;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
     },
   },
 };
