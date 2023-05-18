@@ -145,6 +145,22 @@ const resolvers = {
         throw new GraphQLError(error.message);
       }
     },
+
+    createBook: async (_, { bookInput }) => {
+      try {
+        const author = await Author.findById(authorId);
+        if (!author) {
+          throw new Error("Author not found");
+        }
+
+        const book = {
+          title,
+          author: authorId,
+          published,
+          genre,
+        };
+      } catch (error) {}
+    },
   },
   Query: {
     getAuthor: async (_, { id }) => {
