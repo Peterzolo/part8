@@ -23,7 +23,7 @@ const typeDefs = `
 
   input AuthorInput {
     name: String!
-    born: Int
+    born: Int!
     bookCount: Int
   }
 
@@ -61,69 +61,36 @@ const typeDefs = `
 const resolvers = {
   Mutation: {
     addBook: async (_, { book }) => {
-      try {
-        const author = await Author.findOne({ name: book.author });
+      const { title, published, author: authorName, genres } = book;
 
-        if (!author) {
-          // If the author doesn't exist, create a new author
-          const newAuthor = new Author({
-            name: book.author,
-            born: null,
-            bookCount: 1,
-          });
-
-          await newAuthor.save();
-
-          const newBook = new Book({
-            title: book.title,
-            published: book.published,
-            author: newAuthor._id,
-            genres: book.genres,
-          });
-
-          await newBook.save();
-
-          return newBook;
-        } else {
-          // If the author exists, increment the bookCount and create a new book
-          author.bookCount += 1;
-          await author.save();
-
-          const newBook = new Book({
-            title: book.title,
-            published: book.published,
-            author: author._id,
-            genres: book.genres,
-          });
-
-          await newBook.save();
-
-          return newBook;
-        }
-      } catch (error) {
-        throw new GraphQLError(`Error adding book: ${error.message}`);
+      const existingBook = await Book.findOne({ title });
+      if (existingBook) {
+        throw new GraphQLError("Book with the same title already exists");
       }
-    },
 
-    addAuthor: async (_, { author }) => {
-      try {
-        const newAuthor = new Author({
-          name: author.name,
-          born: author.born,
-          bookCount: author.bookCount || 0,
+      let author = await Author.findOne({ name: authorName });
+
+      // Create a new author if they don't exist
+      if (!author) {
+        author = new Author({
+          name: authorName,
+          bookCount: 0,
         });
-
-        await newAuthor.save();
-
-        return newAuthor;
-      } catch (error) {
-        throw new GraphQLError(`Error adding author: ${error.message}`);
       }
-    },
-  },
 
-  Query: {
-    // Implement your existing query resolvers here
+      const newBook = new Book({
+        title,
+        published,
+        genres,
+        author: author._id,
+      });
+
+      author.bookCount += 1;
+      await author.save();
+      await newBook.save();
+
+      return newBook;
+    },
   },
 };
 
