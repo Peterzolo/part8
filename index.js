@@ -105,6 +105,18 @@ const resolvers = {
           throw new Error("Invalid username or password");
         }
 
+        const token = jwt.sign(
+          { authorId: author._id },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "1h",
+          }
+        );
+
+        res.cookie("token", token, {
+          httpOnly: true,
+        });
+
         return author;
       } catch (error) {
         throw new GraphQLError(error.message);
