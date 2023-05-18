@@ -47,6 +47,14 @@ input AuthorInput {
   bookCount: Int
 }
 
+
+input BookInput {
+  title: String!
+  authorId: ID!
+  published: Int
+  genre: String
+}
+
 input LoginInput {
   username: String!
   password: String!
@@ -58,11 +66,15 @@ type Mutation {
   updateAuthor(id: ID!, authorInput: AuthorInput!): Author
   deleteAuthor(id: ID!): Author
   loginAuthor(loginInput: LoginInput!): Author 
+  createBook(bookInput: BookInput!): Book
 }
+
 
 type Query {
   getAuthor(id: ID!): Author
   getAllAuthors: [Author]
+  getBook(id: ID!): Book
+  getAllBooks: [Book]
 }
 `;
 
