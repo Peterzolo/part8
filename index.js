@@ -4,8 +4,10 @@ const { v1: uuid } = require("uuid");
 const { GraphQLError } = require("graphql");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const { databaseConnection } = require("./src/config/database");
 mongoose.set("strictQuery", false);
+const cookie = require("cookie-parser");
 
 const Author = require("./src/model/Author");
 
@@ -114,7 +116,7 @@ const resolvers = {
           }
         );
 
-        res.cookie("token", token, {
+        cookie("token", token, {
           httpOnly: true,
         });
 
