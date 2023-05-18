@@ -1,4 +1,5 @@
-const { ApolloServer, gql } = require("@apollo/server");
+// const { ApolloServer, gql } = require("@apollo/server");
+const { ApolloServer, gql } = require("apollo-server-express");
 const { startStandaloneServer } = require("@apollo/server/standalone");
 const { v1: uuid } = require("uuid");
 const { GraphQLError } = require("graphql");
@@ -7,9 +8,12 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { databaseConnection } = require("./src/config/database");
 mongoose.set("strictQuery", false);
-const cookie = require("cookie-parser");
+const cookieParser = require("cookie-parser");
+const express = require("express");
+const cors = require("cors");
 
 const Author = require("./src/model/Author");
+const authenticated = require("./src/utils/auth-middleware");
 
 require("dotenv").config();
 
@@ -24,12 +28,15 @@ type Author {
   born: Int
   bookCount: Int
   books: [Book]
+  token: String
 }
 
 type Book {
-  _id: ID!
   title: String!
   author: Author!
+  published: Int
+  genre : String
+
 }
 
 input AuthorInput {
@@ -95,7 +102,7 @@ const resolvers = {
       }
     },
 
-    loginAuthor: async (_, { loginInput }) => {
+    loginAuthor: async (_, { loginInput }, { req, res }) => {
       const { username, password } = loginInput;
       try {
         const author = await Author.findOne({ username });
@@ -116,11 +123,12 @@ const resolvers = {
           }
         );
 
-        cookie("token", token, {
+        res.cookie("token", token, {
           httpOnly: true,
+          maxAge: 3600000,
         });
 
-        return author;
+        return { ...author._doc, token };
       } catch (error) {
         throw new GraphQLError(error.message);
       }
@@ -152,10 +160,18 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  context: ({ req, res }) => ({ req, res }),
 });
+const app = express();
 
-startStandaloneServer(server, {
-  listen: { port: 5000 },
-}).then(({ url }) => {
-  console.log(`Server ready at ${url}`);
+app.use(cookieParser());
+app.use(cors());
+app.use("/graphql", authenticated);
+
+server.start().then(() => {
+  server.applyMiddleware({ app, path: "/graphql" });
+
+  app.listen({ port: 5000 }, () => {
+    console.log(`Server ready at http://localhost:5000${server.graphqlPath}`);
+  });
 });
