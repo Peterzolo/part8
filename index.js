@@ -159,7 +159,15 @@ const resolvers = {
           published,
           genre,
         };
-      } catch (error) {}
+
+        const savedBook = await Book.create(book);
+        author.books.push(savedBook);
+        await author.save();
+
+        return savedBook;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
     },
   },
   Query: {
