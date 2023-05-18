@@ -3,6 +3,7 @@ const { startStandaloneServer } = require("@apollo/server/standalone");
 const { v1: uuid } = require("uuid");
 const { GraphQLError } = require("graphql");
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 const { databaseConnection } = require("./src/config/database");
 mongoose.set("strictQuery", false);
 
