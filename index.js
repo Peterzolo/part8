@@ -85,6 +85,27 @@ const resolvers = {
       }
     },
   },
+  Query: {
+    getAuthor: async (_, { id }) => {
+      try {
+        const author = await Author.findById(id);
+        if (!author) {
+          throw new Error("Author not found");
+        }
+        return author;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
+    },
+    getAllAuthors: async () => {
+      try {
+        const authors = await Author.find();
+        return authors;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
+    },
+  },
 };
 
 const server = new ApolloServer({
