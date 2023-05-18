@@ -1,5 +1,7 @@
-// const { ApolloServer, gql } = require("@apollo/server");
 const { ApolloServer, gql } = require("apollo-server-express");
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
 const { startStandaloneServer } = require("@apollo/server/standalone");
 const { v1: uuid } = require("uuid");
 const { GraphQLError } = require("graphql");
@@ -8,13 +10,10 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { databaseConnection } = require("./src/config/database");
 mongoose.set("strictQuery", false);
-const cookieParser = require("cookie-parser");
-const express = require("express");
-const cors = require("cors");
 
 const Author = require("./src/model/Author");
 const Book = require("./src/model/book");
-const authenticated = require("./src/utils/auth-middleware");
+const { isAuthenticated } = require("./src/utils/auth-middleware");
 
 require("dotenv").config();
 
@@ -147,12 +146,16 @@ const resolvers = {
       }
     },
 
-    createBook: async (_, { bookInput }) => {
+    // Add the authenticated middleware to the createBook resolver
+    createBook: isAuthenticated(async (_, { bookInput }, { req }) => {
       try {
+        const authorId = req.author._id; // Get the authenticated author's ID from the request
         const author = await Author.findById(authorId);
         if (!author) {
           throw new Error("Author not found");
         }
+
+        const { title, published, genre } = bookInput;
 
         const book = {
           title,
@@ -169,7 +172,7 @@ const resolvers = {
       } catch (error) {
         throw new GraphQLError(error.message);
       }
-    },
+    }),
   },
   Query: {
     getAuthor: async (_, { id }) => {
@@ -219,11 +222,12 @@ const server = new ApolloServer({
   resolvers,
   context: ({ req, res }) => ({ req, res }),
 });
-const app = express();
 
+const app = express();
 app.use(cookieParser());
 app.use(cors());
-app.use("/graphql", authenticated);
+
+app.use("/graphql", isAuthenticated);
 
 server.start().then(() => {
   server.applyMiddleware({ app, path: "/graphql" });

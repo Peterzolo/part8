@@ -1,7 +1,4 @@
-const jwt = require("jsonwebtoken");
-const Author = require("../model/Author");
-
-const authenticated = async (req, res, next) => {
+exports.isAuthenticated = async (req, res, next) => {
   try {
     const token = req.cookies.token;
     if (!token) {
@@ -17,8 +14,6 @@ const authenticated = async (req, res, next) => {
     req.author = author;
     next();
   } catch (error) {
-    res.status(401).json({ error: error.message });
+    res.status(401).send({ error: error.message });
   }
 };
-
-module.exports = authenticated;
