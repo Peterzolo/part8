@@ -75,6 +75,7 @@ type Query {
   getAllAuthors: [Author]
   getBook(id: ID!): Book
   getAllBooks: [Book]
+  isAuthenticated: Boolean
 }
 `;
 
