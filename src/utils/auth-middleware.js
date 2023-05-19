@@ -14,6 +14,8 @@ exports.isAuthenticated = async (req, res, next) => {
     req.author = author;
     next();
   } catch (error) {
-    res.status(401).send({ error: error.message });
+    // res.status(401).send({ error: error.message });
+    // throw new Error("Something wenet wrong");
+    console.log(error.message);
   }
 };

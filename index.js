@@ -137,7 +137,7 @@ const resolvers = {
 
         res.cookie("token", token, {
           httpOnly: true,
-          maxAge: 3600000,
+          maxAge: 360000,
         });
 
         return { ...author._doc, token };
@@ -146,10 +146,9 @@ const resolvers = {
       }
     },
 
-    // Add the authenticated middleware to the createBook resolver
     createBook: isAuthenticated(async (_, { bookInput }, { req }) => {
       try {
-        const authorId = req.author._id; // Get the authenticated author's ID from the request
+        const authorId = req.author._id;
         const author = await Author.findById(authorId);
         if (!author) {
           throw new Error("Author not found");
@@ -221,13 +220,14 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req, res }) => ({ req, res }),
+  plugins: [isAuthenticated],
 });
 
 const app = express();
 app.use(cookieParser());
 app.use(cors());
 
-app.use("/graphql", isAuthenticated);
+// app.use("/graphql");
 
 server.start().then(() => {
   server.applyMiddleware({ app, path: "/graphql" });
