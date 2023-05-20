@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
+import mongoose from "mongoose";
+import uniqueValidator from "mongoose-unique-validator";
 
 const Bookschema = new mongoose.Schema(
   {
@@ -26,6 +26,4 @@ const Bookschema = new mongoose.Schema(
 
 Bookschema.plugin(uniqueValidator);
 
-const Book = mongoose.model("Book", Bookschema);
-
-module.exports = Book;
+export const Book = mongoose.model("Book", Bookschema);

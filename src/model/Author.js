@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+import mongoose from "mongoose";
+import uniqueValidator from "mongoose-unique-validator";
+import bcrypt from "bcryptjs";
 
-const uniqueValidator = require("mongoose-unique-validator");
 const AuthorSchema = new mongoose.Schema(
   {
     name: {
@@ -46,5 +46,4 @@ AuthorSchema.pre("save", async function (next) {
 
 AuthorSchema.plugin(uniqueValidator);
 
-const Author = mongoose.model("Author", AuthorSchema);
-module.exports = Author;
+export const Author = mongoose.model("Author", AuthorSchema);

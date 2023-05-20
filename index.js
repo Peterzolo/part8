@@ -1,21 +1,27 @@
-const { ApolloServer, gql } = require("apollo-server-express");
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
-const { startStandaloneServer } = require("@apollo/server/standalone");
-const { v1: uuid } = require("uuid");
-const { GraphQLError } = require("graphql");
-const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const { databaseConnection } = require("./src/config/database");
+import { ApolloServer } from "apollo-server-express";
+import express from "express";
+import http from "http";
+
+import cookieParser from "cookie-parser";
+
+import cors from "cors";
+
+import { startStandaloneServer } from "@apollo/server/standalone";
+
+import { GraphQLError } from "graphql";
+
+import mongoose from "mongoose";
+
+import Jwt from "jsonwebtoken";
+
+import bcrypt from "bcryptjs";
+
 mongoose.set("strictQuery", false);
 
-const Author = require("./src/model/Author");
-const Book = require("./src/model/book");
-const { isAuthenticated } = require("./src/utils/auth-middleware");
-
-require("dotenv").config();
+import { databaseConnection } from "./src/config/database.js";
+import { Author } from "./src/model/Author.js";
+import { Book } from "./src/model/book.js";
+import { context } from "./src/context/context.js";
 
 databaseConnection();
 
@@ -147,7 +153,7 @@ const resolvers = {
       }
     },
     // Update the addBook resolver signature to include 'context' as the third argument
-    addBook: isAuthenticated(async (_, { bookInput }, { req }) => {
+    addBook: async (_, { bookInput }) => {
       try {
         const authorId = req.authorId; // Use req.authorId instead of req.author._id
         console.log("AUTHOR");
@@ -173,7 +179,7 @@ const resolvers = {
       } catch (error) {
         throw new GraphQLError(error.message);
       }
-    }),
+    },
   },
   Query: {
     getAuthor: async (_, { id }) => {
@@ -222,19 +228,28 @@ const app = express();
 app.use(cookieParser());
 app.use(cors());
 
-const server = new ApolloServer({
+// ...
+
+const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
-  context: ({ req, res }) => ({ req, res }),
-  plugins: [isAuthenticated],
+  context: context,
 });
 
-// app.use("/graphql");
+// Await server start before calling applyMiddleware
+async function startApolloServer() {
+  await apolloServer.start();
+  apolloServer.applyMiddleware({ app });
+}
 
-server.start().then(() => {
-  server.applyMiddleware({ app, path: "/graphql" });
+startApolloServer().then(() => {
+  const httpServer = http.createServer(app);
 
-  app.listen({ port: 5000 }, () => {
-    console.log(`Server ready at http://localhost:5000${server.graphqlPath}`);
+  httpServer.listen({ port: 5000 }, () => {
+    console.log(
+      `Server ready at http://localhost:5000${apolloServer.graphqlPath}`
+    );
   });
 });
+
+// ...
