@@ -1,16 +1,17 @@
 import jwt from "jsonwebtoken";
 
-export const context = async ({ req }) => {
-  const token = req.headers.authorization;
-  console.log("TOKEN AUTH", token);
+export const context = ({ req }) => {
+  const token = req.headers.authorization || "";
+  console.log("NEW TOKEN");
   if (token) {
     try {
       const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-      req.authorId = decodedToken.authorId;
+      // Add the decoded token or user ID to the context object
+      return { authorId: decodedToken.authorId };
     } catch (error) {
       throw new Error("Invalid token");
     }
-  } else {
-    throw new Error("Authorization token not found");
   }
+  // If no token is provided, return an empty context object
+  return {};
 };

@@ -3,18 +3,20 @@ import express from "express";
 import http from "http";
 
 import cookieParser from "cookie-parser";
+import { formatError } from "graphql";
 
 import cors from "cors";
-
-import { startStandaloneServer } from "@apollo/server/standalone";
 
 import { GraphQLError } from "graphql";
 
 import mongoose from "mongoose";
 
-import Jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 mongoose.set("strictQuery", false);
 
@@ -126,6 +128,7 @@ const resolvers = {
 
       try {
         const author = await Author.findOne({ username });
+
         if (!author) {
           throw new Error("Invalid username or password");
         }
@@ -143,9 +146,8 @@ const resolvers = {
           }
         );
 
-        res.setHeader("Authorization", `Bearer ${token}`);
-        console.log("RES", res.setHeader("Authorization", `Bearer ${token}`));
-
+        console.log("NEW TOKEN", token);
+        // res.cookie("token", token, { httpOnly: true });
         return { ...author._doc, token };
       } catch (error) {
         throw new GraphQLError(error.message);
@@ -155,6 +157,7 @@ const resolvers = {
     addBook: async (_, { bookInput }, { req }) => {
       try {
         const authorId = req.authorId;
+        console.log("AUTHOR ID", authorId);
         if (!authorId) {
           throw new Error("Unauthorized: You must be logged in to add a book.");
         }
@@ -234,11 +237,18 @@ const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
   context: context,
+  formatError: (error) => {
+    if (error.originalError instanceof GraphQLError) {
+      // Handle custom GraphQL errors
+      return new ApolloError(error.message, error.originalError.code);
+    }
+    return error;
+  },
 });
 
 async function startApolloServer() {
   await apolloServer.start();
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({ app, path: "/graphql" });
 }
 
 startApolloServer().then(() => {
@@ -250,5 +260,3 @@ startApolloServer().then(() => {
     );
   });
 });
-
-// ...
