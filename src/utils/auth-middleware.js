@@ -1,21 +1,26 @@
+const jwt = require("jsonwebtoken");
+const { promisify } = require("util");
+
 exports.isAuthenticated = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new Error("Unauthorized");
+    }
+
+    const token = authHeader.split(" ")[1];
+
     if (!token) {
-      throw new Error("Authentication required");
+      throw new Error("Unauthorized");
     }
 
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-    const author = await Author.findById(decodedToken.authorId);
-    if (!author) {
-      throw new Error("Invalid token");
-    }
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-    req.author = author;
+    req.authorId = decoded.authorId;
+
     next();
   } catch (error) {
-    // res.status(401).send({ error: error.message });
-    // throw new Error("Something wenet wrong");
-    console.log(error.message);
+    res.status(401).json({ error: "Unauthorized" });
   }
 };

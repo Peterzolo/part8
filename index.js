@@ -33,11 +33,11 @@ type Author {
 
 type Book {
   title: String!
-  author: Author!
+  author: Author
   published: Int
-  genre : String
-
+  genre: String
 }
+
 
 input AuthorInput {
   name: String!
@@ -50,7 +50,7 @@ input AuthorInput {
 
 input BookInput {
   title: String!
-  authorId: ID!
+  authorId: ID
   published: Int
   genre: String
 }
@@ -66,7 +66,7 @@ type Mutation {
   updateAuthor(id: ID!, authorInput: AuthorInput!): Author
   deleteAuthor(id: ID!): Author
   loginAuthor(loginInput: LoginInput!): Author 
-  createBook(bookInput: BookInput!): Book
+  addBook(bookInput: BookInput!): Book
 }
 
 
@@ -117,6 +117,7 @@ const resolvers = {
 
     loginAuthor: async (_, { loginInput }, { req, res }) => {
       const { username, password } = loginInput;
+
       try {
         const author = await Author.findOne({ username });
         if (!author) {
@@ -136,20 +137,20 @@ const resolvers = {
           }
         );
 
-        res.cookie("token", token, {
-          httpOnly: true,
-          maxAge: 360000,
-        });
+        // Set the token in the authorization header
+        res.setHeader("Authorization", `Bearer ${token}`);
+        console.log("RES", res.setHeader("Authorization", `Bearer ${token}`));
 
         return { ...author._doc, token };
       } catch (error) {
         throw new GraphQLError(error.message);
       }
     },
-
-    createBook: isAuthenticated(async (_, { bookInput }, { req }) => {
+    // Update the addBook resolver signature to include 'context' as the third argument
+    addBook: isAuthenticated(async (_, { bookInput }, { req }) => {
       try {
-        const authorId = req.author._id;
+        const authorId = req.authorId; // Use req.authorId instead of req.author._id
+        console.log("AUTHOR");
         const author = await Author.findById(authorId);
         if (!author) {
           throw new Error("Author not found");
@@ -217,16 +218,16 @@ const resolvers = {
   },
 };
 
+const app = express();
+app.use(cookieParser());
+app.use(cors());
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req, res }) => ({ req, res }),
   plugins: [isAuthenticated],
 });
-
-const app = express();
-app.use(cookieParser());
-app.use(cors());
 
 // app.use("/graphql");
 

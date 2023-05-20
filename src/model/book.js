@@ -8,14 +8,13 @@ const Bookschema = new mongoose.Schema(
       required: true,
       minlength: 5,
     },
-    genres: {
+    genre: {
       type: String,
       required: true,
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Author",
-      required: true,
     },
     published: {
       type: Number,
