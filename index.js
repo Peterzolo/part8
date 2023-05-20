@@ -146,18 +146,15 @@ const resolvers = {
           }
         );
 
-        console.log("NEW TOKEN", token);
-        // res.cookie("token", token, { httpOnly: true });
         return { ...author._doc, token };
       } catch (error) {
         throw new GraphQLError(error.message);
       }
     },
 
-    addBook: async (_, { bookInput }, { req }) => {
+    addBook: async (_, { bookInput }, { authorId }) => {
+      console.log("GOT HERE");
       try {
-        const authorId = req.authorId;
-        console.log("AUTHOR ID", authorId);
         if (!authorId) {
           throw new Error("Unauthorized: You must be logged in to add a book.");
         }
@@ -239,7 +236,6 @@ const apolloServer = new ApolloServer({
   context: context,
   formatError: (error) => {
     if (error.originalError instanceof GraphQLError) {
-      // Handle custom GraphQL errors
       return new ApolloError(error.message, error.originalError.code);
     }
     return error;
