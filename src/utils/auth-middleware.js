@@ -1,26 +1,26 @@
 const jwt = require("jsonwebtoken");
-const { promisify } = require("util");
+const { GraphQLError } = require("graphql");
 
-exports.isAuthenticated = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
+const isAuthenticated = (resolve, _, args, context) => {
+  const { req, res } = context;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new Error("Unauthorized");
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split("Bearer ")[1];
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.authorId = decoded.authorId;
+      return resolve(_, args, context);
+    } catch (error) {
+      throw new GraphQLError("Invalid or expired token");
     }
-
-    const token = authHeader.split(" ")[1];
-
-    if (!token) {
-      throw new Error("Unauthorized");
-    }
-
-    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-
-    req.authorId = decoded.authorId;
-
-    next();
-  } catch (error) {
-    res.status(401).json({ error: "Unauthorized" });
+  } else {
+    throw new GraphQLError("Authentication required");
   }
+};
+
+module.exports = {
+  isAuthenticated,
 };
