@@ -143,7 +143,6 @@ const resolvers = {
           }
         );
 
-        // Set the token in the authorization header
         res.setHeader("Authorization", `Bearer ${token}`);
         console.log("RES", res.setHeader("Authorization", `Bearer ${token}`));
 
@@ -152,11 +151,14 @@ const resolvers = {
         throw new GraphQLError(error.message);
       }
     },
-    // Update the addBook resolver signature to include 'context' as the third argument
-    addBook: async (_, { bookInput }) => {
+
+    addBook: async (_, { bookInput }, { req }) => {
       try {
-        const authorId = req.authorId; // Use req.authorId instead of req.author._id
-        console.log("AUTHOR");
+        const authorId = req.authorId;
+        if (!authorId) {
+          throw new Error("Unauthorized: You must be logged in to add a book.");
+        }
+
         const author = await Author.findById(authorId);
         if (!author) {
           throw new Error("Author not found");
@@ -228,15 +230,12 @@ const app = express();
 app.use(cookieParser());
 app.use(cors());
 
-// ...
-
 const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
   context: context,
 });
 
-// Await server start before calling applyMiddleware
 async function startApolloServer() {
   await apolloServer.start();
   apolloServer.applyMiddleware({ app });
