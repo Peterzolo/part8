@@ -1,17 +1,17 @@
 import mongoose from "mongoose";
-import uniqueValidator from "mongoose-unique-validator";
 import bcrypt from "bcryptjs";
+import uniqueValidator from "mongoose-unique-validator";
 
 const AuthorSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
-      unique: true,
       minlength: 4,
     },
     username: {
       type: String,
+      unique: true,
       required: true,
     },
     password: { type: String, required: true },
@@ -21,10 +21,12 @@ const AuthorSchema = new mongoose.Schema(
     bookCount: {
       type: Number,
     },
-    books: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Book",
-    },
+    books: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Book",
+      },
+    ],
   },
   { timestamps: true },
 
@@ -38,12 +40,12 @@ const AuthorSchema = new mongoose.Schema(
   }
 );
 
+AuthorSchema.plugin(uniqueValidator);
+
 AuthorSchema.pre("save", async function (next) {
   const hashedPassword = await bcrypt.hash(this.password, 10);
   this.password = hashedPassword;
   next();
 });
-
-AuthorSchema.plugin(uniqueValidator);
 
 export const Author = mongoose.model("Author", AuthorSchema);

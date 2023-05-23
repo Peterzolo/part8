@@ -1,9 +1,8 @@
-import { ApolloServer } from "apollo-server-express";
+import { ApolloServer, ApolloError } from "apollo-server-express";
 import express from "express";
 import http from "http";
 
 import cookieParser from "cookie-parser";
-import { formatError } from "graphql";
 
 import cors from "cors";
 
@@ -28,33 +27,42 @@ import { context } from "./src/context/context.js";
 databaseConnection();
 
 const typeDefs = `
+
 type Author {
-  _id: ID!
-  name: String!
+  name: String
   username: String!
-  password: String!
   born: Int
   bookCount: Int
   books: [Book]
-  token: String
+  createdAt: String
+  updatedAt: String
 }
-
-type Book {
-  title: String!
-  author: Author
-  published: Int
-  genre: String
-}
-
 
 input AuthorInput {
   name: String!
   username: String!
   password: String!
   born: Int
-  bookCount: Int
 }
 
+input LoginInput {
+  username: String!
+  password: String!
+}
+
+type AuthPayload {
+  author: Author
+  token: String
+}
+
+
+type Book {
+  title: String!
+  author: Author
+  published: Int
+  genre: String
+  id:ID
+}
 
 input BookInput {
   title: String!
@@ -63,17 +71,17 @@ input BookInput {
   genre: String
 }
 
-input LoginInput {
-  username: String!
-  password: String!
+input FilterInput {
+  genre: String
 }
+
 
 
 type Mutation {
   createAuthor(authorInput: AuthorInput!): Author
   updateAuthor(id: ID!, authorInput: AuthorInput!): Author
   deleteAuthor(id: ID!): Author
-  loginAuthor(loginInput: LoginInput!): Author 
+  loginAuthor(loginInput: LoginInput!): AuthPayload
   addBook(bookInput: BookInput!): Book
 }
 
@@ -84,6 +92,7 @@ type Query {
   getBook(id: ID!): Book
   getAllBooks: [Book]
   isAuthenticated: Boolean
+  getBooksByGenre(genre: String!): [Book]
 }
 `;
 
@@ -91,6 +100,11 @@ const resolvers = {
   Mutation: {
     createAuthor: async (_, { authorInput }) => {
       try {
+        const { username } = authorInput;
+        const existingAuthor = await Author.findOne({ username });
+        if (existingAuthor) {
+          throw new Error("Author already exists");
+        }
         const author = new Author(authorInput);
         await author.save();
         return author;
@@ -98,13 +112,20 @@ const resolvers = {
         throw new GraphQLError(error.message);
       }
     },
+
     updateAuthor: async (_, { id, authorInput }) => {
       try {
-        const author = await Author.findByIdAndUpdate(id, authorInput, {
+        const { born, ...restInput } = authorInput;
+
+        const author = await Author.findByIdAndUpdate(id, restInput, {
           new: true,
         });
         if (!author) {
           throw new Error("Author not found");
+        }
+        if (born !== undefined) {
+          author.born = born;
+          await author.save();
         }
         return author;
       } catch (error) {
@@ -146,20 +167,20 @@ const resolvers = {
           }
         );
 
-        return { ...author._doc, token };
+        return { author, token };
       } catch (error) {
         throw new GraphQLError(error.message);
       }
     },
 
     addBook: async (_, { bookInput }, { authorId }) => {
-      console.log("GOT HERE");
       try {
         if (!authorId) {
           throw new Error("Unauthorized: You must be logged in to add a book.");
         }
 
         const author = await Author.findById(authorId);
+
         if (!author) {
           throw new Error("Author not found");
         }
@@ -186,7 +207,7 @@ const resolvers = {
   Query: {
     getAuthor: async (_, { id }) => {
       try {
-        const author = await Author.findById(id);
+        const author = await Author.findById(id).populate("books");
         if (!author) {
           throw new Error("Author not found");
         }
@@ -197,7 +218,7 @@ const resolvers = {
     },
     getAllAuthors: async () => {
       try {
-        const authors = await Author.find();
+        const authors = await Author.find().populate("books");
         return authors;
       } catch (error) {
         throw new GraphQLError(error.message);
@@ -206,18 +227,32 @@ const resolvers = {
 
     getBook: async (_, { id }) => {
       try {
-        const book = await Book.findById(id);
+        const book = await Book.findById(id).populate("author");
         if (!book) {
           throw new Error("Book not found");
         }
+
+        if (!book.author) {
+          throw new Error("Author not found for the book");
+        }
+
         return book;
       } catch (error) {
         throw new GraphQLError(error.message);
       }
     },
+
     getAllBooks: async () => {
       try {
-        const books = await Book.find();
+        const books = await Book.find().populate("author");
+        return books;
+      } catch (error) {
+        throw new GraphQLError(error.message);
+      }
+    },
+    getBooksByGenre: async (_, { genre }) => {
+      try {
+        const books = await Book.find({ genre });
         return books;
       } catch (error) {
         throw new GraphQLError(error.message);
