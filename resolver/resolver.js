@@ -106,6 +106,8 @@ export const resolvers = {
         author.books.push(savedBook);
         await author.save();
 
+        pubsub.publish("NEW_BOOK", { newBook: savedBook });
+
         return savedBook;
       } catch (error) {
         throw new GraphQLError(error.message);
@@ -165,6 +167,12 @@ export const resolvers = {
       } catch (error) {
         throw new GraphQLError(error.message);
       }
+    },
+  },
+
+  Subscription: {
+    newBook: {
+      subscribe: () => pubsub.asyncIterator(["NEW_BOOK"]),
     },
   },
 };

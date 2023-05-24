@@ -47,6 +47,11 @@ input FilterInput {
   genre: String
 }
 
+type Subscription {
+    newBook: Book
+  }
+  
+
 
 
 type Mutation {

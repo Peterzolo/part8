@@ -1,33 +1,28 @@
 import { ApolloServer, ApolloError } from "apollo-server-express";
 import express from "express";
 import http from "http";
-
-import cookieParser from "cookie-parser";
-
-import cors from "cors";
-
-import { GraphQLError } from "graphql";
-
+import { WebSocketServer } from "ws";
+import { useServer } from "graphql-ws/lib/use/ws";
+import { PubSub } from "graphql-subscriptions";
+import { GraphQLError, execute, subscribe } from "graphql";
 import mongoose from "mongoose";
-
 import dotenv from "dotenv";
 
-dotenv.config();
-
-mongoose.set("strictQuery", false);
-
 import { databaseConnection } from "./src/config/database.js";
-import { Author } from "./src/model/Author.js";
-import { Book } from "./src/model/book.js";
 import { context } from "./src/context/context.js";
 import { typeDefs } from "./schema/schema.js";
 import { resolvers } from "./resolver/resolver.js";
 
+dotenv.config();
+
+mongoose.set("strictQuery", false);
 databaseConnection();
 
+const pubsub = new PubSub();
+
 const app = express();
-app.use(cookieParser());
-app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const apolloServer = new ApolloServer({
   typeDefs,
@@ -43,15 +38,38 @@ const apolloServer = new ApolloServer({
 
 async function startApolloServer() {
   await apolloServer.start();
-  apolloServer.applyMiddleware({ app, path: "/graphql" });
-}
 
-startApolloServer().then(() => {
   const httpServer = http.createServer(app);
 
-  httpServer.listen({ port: 5000 }, () => {
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: "/graphql",
+  });
+
+  useServer(
+    {
+      schema: apolloServer.schema,
+      execute,
+      subscribe,
+    },
+    wsServer
+  );
+
+  apolloServer.applyMiddleware({
+    app,
+    cors: {
+      origin: "*", // Replace with the appropriate origin if needed
+      credentials: true,
+    },
+  });
+
+  httpServer.listen({ port: process.env.PORT || 5000 }, () => {
     console.log(
-      `Server ready at http://localhost:5000${apolloServer.graphqlPath}`
+      `Server ready at http://localhost:${process.env.PORT || 5000}${
+        apolloServer.graphqlPath
+      }`
     );
   });
-});
+}
+
+startApolloServer();
