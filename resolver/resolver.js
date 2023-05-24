@@ -1,6 +1,7 @@
 import { Author } from "../src/model/Author.js";
 import { Book } from "../src/model/book.js";
 import jwt from "jsonwebtoken";
+import { GraphQLError } from "graphql";
 
 import bcrypt from "bcryptjs";
 

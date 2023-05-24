@@ -2,6 +2,7 @@ export const typeDefs = `
 
 type Author {
   name: String
+  id:ID
   username: String!
   born: Int
   bookCount: Int

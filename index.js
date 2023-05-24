@@ -58,7 +58,7 @@ async function startApolloServer() {
   apolloServer.applyMiddleware({
     app,
     cors: {
-      origin: "*", // Replace with the appropriate origin if needed
+      origin: "*",
       credentials: true,
     },
   });
